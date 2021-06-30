@@ -1,4 +1,4 @@
-import { useState, useEffect, useReducer } from 'react'
+import { useState, useEffect, useReducer, useCallback } from 'react'
 import Projectile from './Projectile'
 import smash from '../../sounds/Smash.wav'
 import { editM8, m8Profile } from '../../lib/api'
@@ -92,14 +92,18 @@ export default function Game() {
   const [smashed, setSmashed] = useState(false)
   const [m8, setM8] = useState(false)
   const { m8Id } = getPayload()
-  
-  useEffect(() => {
+
+  const runGame = useCallback(() => {
     clearInterval(intervalId)
     if (!smashed) {
       setIntervalId(setInterval(() => {
         dispatch({ type: 'ballisticFlight' })  
       }, 10))
     }
+  }, [intervalId, smashed])
+  
+  useEffect(() => {
+    runGame()
     const getData = async () => {
       const { data } = await m8Profile(m8Id)
       setM8(data)
@@ -107,7 +111,9 @@ export default function Game() {
     if (!m8 && isLoggedIn) {
       getData()
     }
-  }, [platesCaught])
+    // ! including runGame in the depencancy array breaks the game
+  }, [platesCaught, m8, m8Id, isLoggedIn])
+
 
   const newProjectile = () => {
     dispatch({ type: 'reset' })
